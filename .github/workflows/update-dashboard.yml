@@ -33,6 +33,7 @@ jobs:
         width: 1072
         height: 1448
         output: dashboard.png
+        delay: 10  # <--- ADD THIS LINE (waits 10 seconds for data to load)
 
     - name: Commit and Push
       run: |
