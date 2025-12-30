@@ -22,7 +22,7 @@
             background-color: white;
             color: black;
             /* Base font size for high-res Voyage display */
-            font-size: 14.48px; 
+            font-size: 18px; 
         }
 
         body {
@@ -205,7 +205,7 @@
 
         var page, temp, icon, city, description, date, sun, forecastsCells;
         var forecastCount = 5;
-        var timeFormat = "HH:mm";
+        var timeFormat = "HH:mm A";
         var _apiParams = null;
 
         window.addEventListener('load', function () {
@@ -262,31 +262,35 @@
     <div id="description"></div>
     <div id="sun"></div>
 
-    <div class="forecast">
+ <div class="forecast">
         <div class="col">
             <div id="time1"></div>
             <i id="icon1"></i>
             <div id="temp1"></div>
-        </div>
+            <div id="desc1" style="display:none"></div> </div>
         <div class="col">
             <div id="time2"></div>
             <i id="icon2"></i>
             <div id="temp2"></div>
+            <div id="desc2" style="display:none"></div>
         </div>
         <div class="col">
             <div id="time3"></div>
             <i id="icon3"></i>
             <div id="temp3"></div>
+            <div id="desc3" style="display:none"></div>
         </div>
         <div class="col">
             <div id="time4"></div>
             <i id="icon4"></i>
             <div id="temp4"></div>
+            <div id="desc4" style="display:none"></div>
         </div>
         <div class="col">
             <div id="time5"></div>
             <i id="icon5"></i>
             <div id="temp5"></div>
+            <div id="desc5" style="display:none"></div>
         </div>
     </div>
 </div>
