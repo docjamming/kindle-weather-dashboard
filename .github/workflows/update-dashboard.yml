@@ -1,0 +1,48 @@
+name: Update Kindle Dashboard
+
+on:
+  schedule:
+    # Run every hour (adjust cron as needed)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows you to manually trigger it for testing
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Start Server & Take Screenshot
+      env:
+        # Map the secrets you set in Phase 1 here
+        OWM_APP_ID: ${{ secrets.OWM_APP_ID }}
+        OWM_LAT: ${{ secrets.OWM_LAT }}
+        OWM_LON: ${{ secrets.OWM_LON }}
+      run: |
+        # Start the server in the background
+        npm start &
+        
+        # Wait for server to boot
+        sleep 10
+        
+        # Use Puppeteer (or a simple screenshot tool) to capture the page
+        # This uses chrome-cli which is available in GitHub runners or via npx
+        npx puppeteer-screenshot-cli http://localhost:3000 --width 600 --height 800 --output dashboard.png
+
+    - name: Commit and Push Dashboard Image
+      run: |
+        git config --global user.name 'GitHub Action'
+        git config --global user.email 'action@github.com'
+        git add dashboard.png
+        git commit -m "Update weather dashboard [skip ci]" || echo "No changes to commit"
+        git push
