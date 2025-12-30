@@ -2,47 +2,39 @@ name: Update Kindle Dashboard
 
 on:
   schedule:
-    # Run every hour (adjust cron as needed)
-    - cron: '0 * * * *'
-  workflow_dispatch: # Allows you to manually trigger it for testing
+    - cron: '0 * * * *' # Updates every hour
+  workflow_dispatch: 
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Install Dependencies
-      run: npm install
-
-    - name: Start Server & Take Screenshot
-      env:
-        # Map the secrets you set in Phase 1 here
-        OWM_APP_ID: ${{secrets.OPENWEATHER_API_KEY}}
-        OWM_LAT: ${{secrets.LATITUDE}}
-        OWM_LON: ${{secrets.LONGITUDE}}
+    # This step injects your Secrets into the config.js file before screenshotting
+    - name: Inject Secrets into config.js
       run: |
-        # Start the server in the background
-        npm start &
-        
-        # Wait for server to boot
-        sleep 10
-        
-        # Use Puppeteer (or a simple screenshot tool) to capture the page
-        # This uses chrome-cli which is available in GitHub runners or via npx
-        npx puppeteer-screenshot-cli http://localhost:3000 --width 1072 --height 1448 --output dashboard.png
+        echo "var api_locParams = 'lat=${{ secrets.OWM_LAT }}&lon=${{ secrets.OWM_LON }}';" > config.js
+        echo "var api_appId = '${{ secrets.OWM_APP_ID }}';" >> config.js
+        echo "var api_lang = 'en';" >> config.js
+        echo "var api_units = 'imperial';" >> config.js
+        echo "var refreshTime = 30 * 60 * 1000;" >> config.js
+        echo "var night_mode = 'off';" >> config.js
+        echo "var utcOffset = null;" >> config.js
 
-    - name: Commit and Push Dashboard Image
+    - name: Take Screenshot
+      uses: web-pixels/screenshot-action@v1
+      with:
+        url: file://${{ github.workspace }}/index.html
+        width: 600
+        height: 800
+        output: dashboard.png
+
+    - name: Commit and Push
       run: |
         git config --global user.name 'GitHub Action'
         git config --global user.email 'action@github.com'
         git add dashboard.png
-        git commit -m "Update weather dashboard [skip ci]" || echo "No changes to commit"
+        git commit -m "Update dashboard image" || exit 0
         git push
