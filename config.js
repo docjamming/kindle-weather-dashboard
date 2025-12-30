@@ -1,7 +1,7 @@
 var api_locParams = "lat=39.9590&lon=-75.1347";
 // or api_locParams = "q=Paris";
 var api_appId = "82894da9660078f82fdfebbe1fe664c4";
-var api_lang = "en"
+var api_lang = "en";
 var api_units = "imperial"; 
 
 var api_params = null;
