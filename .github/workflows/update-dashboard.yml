@@ -29,9 +29,9 @@ jobs:
     - name: Take Screenshot
       uses: karol-brejna-i/webpage-screenshot-action@v1
       with:
-        url: file://${{ github.workspace }}/index.html
-        width: 600
-        height: 800
+        url: file://${{ github.workspace }}/index_old.html
+        width: 1072
+        height: 1448
         output: dashboard.png
 
     - name: Commit and Push
