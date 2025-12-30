@@ -5,6 +5,9 @@ on:
     - cron: '0 * * * *' # Updates every hour
   workflow_dispatch: 
 
+permissions:
+  contents: write # CRITICAL: Allows the action to push the image to your repo
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,8 +15,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # This step injects your Secrets into the config.js file before screenshotting
-     - name: Inject Secrets into config.js
+    # Injecting secrets into config.js
+    - name: Inject Secrets into config.js
       run: |
         echo "var api_locParams = 'lat=${{ secrets.OWM_LAT }}&lon=${{ secrets.OWM_LON }}';" > config.js
         echo "var api_appId = '${{ secrets.OWM_APP_ID }}';" >> config.js
@@ -24,7 +27,7 @@ jobs:
         echo "var utcOffset = null;" >> config.js
 
     - name: Take Screenshot
-      uses: web-pixels/screenshot-action@v1
+      uses: karol-brejna-i/webpage-screenshot-action@v1
       with:
         url: file://${{ github.workspace }}/index.html
         width: 600
@@ -33,8 +36,8 @@ jobs:
 
     - name: Commit and Push
       run: |
-        git config --global user.name 'GitHub Action'
-        git config --global user.email 'action@github.com'
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add dashboard.png
-        git commit -m "Update dashboard image" || exit 0
+        git commit -m "Update dashboard image [skip ci]" || exit 0
         git push
