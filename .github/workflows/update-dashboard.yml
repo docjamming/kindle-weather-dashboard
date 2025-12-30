@@ -34,6 +34,12 @@ jobs:
         height: 1448
         output: dashboard.png
         delay: 10000  # <--- ADD THIS LINE (waits 10 seconds for data to load)
+        
+    - name: Process Image for Kindle
+      run: |
+        sudo apt-get install imagemagick
+        # Convert to 8-bit grayscale and ensure dimensions are exactly 1072x1448
+        convert dashboard.png -colorspace gray -depth 8 -resize 1072x1448\! dashboard.png
 
     - name: Commit and Push
       run: |
