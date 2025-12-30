@@ -13,7 +13,7 @@ jobs:
       uses: actions/checkout@v3
 
     # This step injects your Secrets into the config.js file before screenshotting
-    - name: Inject Secrets into config.js
+     - name: Inject Secrets into config.js
       run: |
         echo "var api_locParams = 'lat=${{ secrets.OWM_LAT }}&lon=${{ secrets.OWM_LON }}';" > config.js
         echo "var api_appId = '${{ secrets.OWM_APP_ID }}';" >> config.js
