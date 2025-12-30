@@ -25,9 +25,9 @@ jobs:
     - name: Start Server & Take Screenshot
       env:
         # Map the secrets you set in Phase 1 here
-        OWM_APP_ID: ${{ secrets.OWM_APP_ID }}
-        OWM_LAT: ${{ secrets.OWM_LAT }}
-        OWM_LON: ${{ secrets.OWM_LON }}
+        OWM_APP_ID: ${{ secrets.OPENWEATHER_API_KEY}}
+        OWM_LAT: ${{ secrets.LATITUDE}}
+        OWM_LON: ${{ secrets.LONGITUDE}}
       run: |
         # Start the server in the background
         npm start &
