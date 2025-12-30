@@ -84,4 +84,212 @@
             return {
                 request: function (src, callback, id) {
                     try {
-                        var self = this, script =
+                        var self = this, script = null;
+                        self.done = false;
+                        if (typeof id === "undefined") { id = "jsonp"; }
+                        if (document.getElementById(id) !== null) {
+                            script = document.getElementById(id);
+                            document.body.removeChild(script);
+                        }
+                        script = document.createElement('script');
+                        script.type = 'application/javascript';
+                        script.id = id;
+                        script.src = src;
+                        script.onload = function () {
+                            if (typeof callback !== "undefined") { callback(self.responseObject); }
+                            script.onload = null;
+                            document.body.removeChild(script);
+                            script = null;
+                        };
+                        document.body.appendChild(script);
+                    } catch (exception) { console.log(exception); }
+                },
+                response: function (response) {
+                    try { this.responseObject = response; } catch (exception) { console.log(exception); }
+                }
+            }
+        }();
+
+        function refreshActualWeather() {
+            jsonp.request(apiProtocol + "//api.openweathermap.org/data/2.5/weather?" + _apiParams + "&callback=jsonp.response&_ts=" + (new Date()).getTime()
+                , function (data) { processActualWeather(data); }, "actual");
+        }
+
+        function refreshForecastWeather() {
+            jsonp.request(apiProtocol + "//api.openweathermap.org/data/2.5/forecast?" + _apiParams + "&callback=jsonp.response&_ts=" + (new Date()).getTime()
+                , function (data) { processForecastWeather(data); }, "forecast");
+        }
+
+        function refreshData() {
+            setNightMode();
+            refreshActualWeather();
+            refreshForecastWeather();
+            window.setTimeout("refreshData()", refreshTime);
+        }
+
+        function processForecastWeather(data) {
+            dataTimeZone = data.city.timezone
+            for (var i = 0; i < forecastCount; i++) {
+                var forecast = data.list[i];
+                var feelsLike = tempType == "feelsLike";
+                forecastsCells[i].temp.innerHTML = (feelsLike ? Math.round(forecast.main.feels_like) : Math.round(forecast.main.temp)) + unitsSymbolHtml;
+                forecastsCells[i].icon.className = getIconClassName(forecast.weather[0], new Date(forecast.dt * 1000));
+                forecastsCells[i].desc.innerHTML = forecast.weather[0].description;
+                forecastsCells[i].time.innerHTML = momentWithCorrectUtcOffset(new Date(forecast.dt * 1000)).format(timeFormat);
+            }
+            setMoonIconsRotation(data.city.coord.lat)
+        }
+
+        function getIconClassName(weather, date) {
+            var isNight = weather.icon.slice(-1) === "n";
+            if (isNight && weather.id == 800) {
+                var phase = getMoonPhaseFromDate(date);
+                return getMoonIconClasses(phase, isNightMode());
+            }
+            return "wi wi-owm-" + (isNight ? "night-" : "day-") + weather.id;
+        }
+
+        function setsUnitsSymbolFromApiUrl(url) {
+            if (url.indexOf("units=metric") >= 0) { unitsSymbolHtml = "<i class='wi wi-celsius'></i>"; return; }
+            if (url.indexOf("units=imperial") >= 0) { unitsSymbolHtml = "<i class='wi wi-fahrenheit'></i>"; return; }
+            unitsSymbolHtml = "<span>K</span>";
+        }
+
+        function getApiParams() {
+            var appId = api_appId;
+            lang = api_lang;
+            var units = api_units;
+            var locParams = api_locParams;
+            var url = locParams + "&appid=" + appId + "&lang=" + lang + "&units=" + units;
+            setsUnitsSymbolFromApiUrl(url);
+            return url;
+        }
+
+        function processActualWeather(data) {
+            dataTimeZone = data.timezone;
+            var feelsLike = tempType == "feelsLike";
+            icon.className = getIconClassName(data.weather[0], new Date(data.dt * 1000));
+            temp.innerHTML = feelsLike ? Math.round(data.main.feels_like) : Math.round(data.main.temp);
+            city.innerHTML = data.name;
+            description.innerHTML = data.weather[0].description;
+            date.innerHTML = momentWithCorrectUtcOffset(new Date()).format("dddd, LL");
+            
+            var sunrise = momentWithCorrectUtcOffset(new Date(data.sys.sunrise * 1000));
+            var sunset = momentWithCorrectUtcOffset(new Date(data.sys.sunset * 1000));
+            _sunriseHour = sunrise.hour();
+            _sunsetHour = sunset.hour();
+
+            sun.innerHTML = "<i class='wi wi-sunrise'></i> " + sunrise.format(timeFormat) + "  <i class='wi wi-sunset'></i> " + sunset.format(timeFormat);
+            setNightMode();
+        }
+
+        function getMoonPhaseFromDate(date) {
+            var lp = 2551443;
+            var new_moon = new Date(1970, 0, 7, 20, 35, 0);
+            return (((date.getTime() - new_moon.getTime()) / 1000) % lp) / lp;
+        }
+
+        function getMoonIconClasses(phase, isNightMode) {
+            var moonIcons = ["wi-moon-alt-new", "wi-moon-alt-waxing-crescent-1", "wi-moon-alt-first-quarter", "wi-moon-alt-waxing-gibbous-1", "wi-moon-alt-full", "wi-moon-alt-waning-gibbous-1", "wi-moon-alt-third-quarter", "wi-moon-alt-waning-crescent-1"];
+            var index = Math.floor(phase * 8) % 8;
+            return "wi " + moonIcons[index] + " moonIcon";
+        }
+
+        function setMoonIconsRotation(latitude) {
+            var rotation = (latitude - 90);
+            var elements = document.getElementsByClassName("moonIcon");
+            for (var i = 0; i < elements.length; i++) {
+                elements[i].style.transform = "rotate(" + rotation + "deg)";
+            }
+        }
+
+        var page, temp, icon, city, description, date, sun, forecastsCells;
+        var forecastCount = 5;
+        var timeFormat = "HH:mm";
+        var _apiParams = null;
+
+        window.addEventListener('load', function () {
+            _apiParams = getApiParams();
+            page = document.getElementById("page");
+            temp = document.getElementById("temp");
+            icon = document.getElementById("icon");
+            city = document.getElementById("city");
+            description = document.getElementById("description");
+            date = document.getElementById("date");
+            sun = document.getElementById("sun");
+
+            forecastsCells = [];
+            for (var i = 0; i < forecastCount; i++) {
+                forecastsCells.push({
+                    temp: document.getElementById("temp" + (i + 1)),
+                    icon: document.getElementById("icon" + (i + 1)),
+                    desc: document.getElementById("desc" + (i + 1)),
+                    time: document.getElementById("time" + (i + 1)),
+                });
+            }
+            refreshData();
+        });
+
+        function setNightMode() {
+            var root = document.querySelector(":root");
+            root.className = isNightMode() ? "night" : "";
+        }
+
+        function isNightMode() {
+            if (night_mode === "on") return true;
+            var now = momentWithCorrectUtcOffset(new Date()).hour();
+            return now >= _sunsetHour || now <= _sunriseHour;
+        }
+
+        function momentWithCorrectUtcOffset(dateTime) {
+            return moment(dateTime).utcOffset(dataTimeZone / 60, false);
+        }
+
+    </script>
+</head>
+
+<body>
+<div id="page">
+    <div id="city"></div>
+    <div id="date"></div>
+    
+    <div id="iconWrapper"><i id="icon"></i></div>
+    
+    <div class="tempWrapper">
+        <div id="temp"></div>
+    </div>
+    
+    <div id="description"></div>
+    <div id="sun"></div>
+
+    <div class="forecast">
+        <div class="col">
+            <div id="time1"></div>
+            <i id="icon1"></i>
+            <div id="temp1"></div>
+        </div>
+        <div class="col">
+            <div id="time2"></div>
+            <i id="icon2"></i>
+            <div id="temp2"></div>
+        </div>
+        <div class="col">
+            <div id="time3"></div>
+            <i id="icon3"></i>
+            <div id="temp3"></div>
+        </div>
+        <div class="col">
+            <div id="time4"></div>
+            <i id="icon4"></i>
+            <div id="temp4"></div>
+        </div>
+        <div class="col">
+            <div id="time5"></div>
+            <i id="icon5"></i>
+            <div id="temp5"></div>
+        </div>
+    </div>
+</div>
+<div id="cleaner"></div>
+</body>
+</html>
